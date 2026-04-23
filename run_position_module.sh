@@ -4,8 +4,8 @@ set -euo pipefail
 
 WS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 POS_SETUP="$WS_DIR/install/setup.bash"
-LIVOX_SETUP="/home/orangepi/ws_livox/install/setup.bash"
-LIVOX_CONFIG="/home/orangepi/ws_livox/install/livox_ros_driver2/share/livox_ros_driver2/config/MID360_config.json"
+LIVOX_SETUP="$HOME/ws_livox/install/setup.bash"
+LIVOX_CONFIG="$HOME/ws_livox/install/livox_ros_driver2/share/livox_ros_driver2/config/MID360_config.json"
 MODULE="${1:-}"
 
 shift || true

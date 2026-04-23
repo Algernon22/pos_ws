@@ -4,7 +4,7 @@ set -euo pipefail
 
 WS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 POS_SETUP="$WS_DIR/install/setup.bash"
-LIVOX_SETUP="/home/orangepi/ws_livox/install/setup.bash"
+LIVOX_SETUP="$HOME/ws_livox/install/setup.bash"
 
 if [[ ! -f "$LIVOX_SETUP" ]]; then
   echo "Missing livox workspace setup: $LIVOX_SETUP" >&2

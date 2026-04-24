@@ -41,18 +41,24 @@ while true; do
   watch_topic_once /livox/imu 4
   watch_topic_once /Odometry 4
   watch_topic_once /mavros/vision_pose/pose 4
+  watch_topic_once /mavros/local_position/odom 4
   watch_topic_once /mavros/state 4
 
   echo
   echo "MAVROS state:"
   timeout 4 ros2 topic echo --once /mavros/state || true
 
+  echo
+  echo "MAVROS local position:"
+  timeout 4 ros2 topic echo --once /mavros/local_position/odom || true
+
   show_topic_hz /livox/lidar 5
   show_topic_hz /livox/imu 5
   show_topic_hz /Odometry 5
   show_topic_hz /mavros/vision_pose/pose 5
+  show_topic_hz /mavros/local_position/odom 5
 
   echo
-  echo "Next refresh in 3s. Press Ctrl-C to stop this monitor."
-  sleep 3
+  echo "Next refresh in 15s. Press Ctrl-C to stop this monitor."
+  sleep 15
 done

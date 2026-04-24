@@ -5,7 +5,7 @@ set -euo pipefail
 WS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SESSION="${POSITION_DEBUG_SESSION:-position_debug}"
 LOG_DIR="$WS_DIR/log/debug/$(date '+%Y%m%d_%H%M%S')"
-FCU_URL="${FCU_URL:-/dev/ttyACM0:57600}"
+FCU_URL="${FCU_URL:-/dev/ttyACM0}"
 TGT_SYSTEM="${TGT_SYSTEM:-1}"
 
 if ! command -v tmux >/dev/null 2>&1; then
@@ -36,6 +36,7 @@ tmux new-session -d -s "$SESSION" -n mavros \
 run_window livox "./run_position_module.sh livox"
 run_window fast_lio "sleep 3; ./run_position_module.sh fast_lio"
 run_window lio_to_mavros "sleep 5; ./run_position_module.sh lio_to_mavros"
+run_window local_position "./run_position_module.sh local_position_monitor"
 run_window monitor "./run_position_module.sh monitor"
 
 tmux select-window -t "$SESSION":monitor

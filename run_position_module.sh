@@ -11,7 +11,7 @@ MODULE="${1:-}"
 shift || true
 
 if [[ -z "$MODULE" ]]; then
-  echo "Usage: $0 <mavros|livox|fast_lio|lio_to_mavros|monitor> [args...]" >&2
+  echo "Usage: $0 <mavros|livox|fast_lio|lio_to_mavros|monitor|local_position_monitor> [args...]" >&2
   exit 2
 fi
 
@@ -44,13 +44,27 @@ case "$MODULE" in
     exec ros2 launch mavros px4.launch "$@"
     ;;
   livox)
+    PUBLISH_FREQ="10.0"
+    FRAME_ID="livox_frame"
+
+    for arg in "$@"; do
+      case "$arg" in
+        publish_freq:=*)
+          PUBLISH_FREQ="${arg#*=}"
+          ;;
+        frame_id:=*)
+          FRAME_ID="${arg#*=}"
+          ;;
+      esac
+    done
+
     exec ros2 run livox_ros_driver2 livox_ros_driver2_node --ros-args \
       -p xfer_format:=0 \
       -p multi_topic:=0 \
       -p data_src:=0 \
-      -p publish_freq:=10.0 \
+      -p publish_freq:="$PUBLISH_FREQ" \
       -p output_data_type:=0 \
-      -p frame_id:=livox_frame \
+      -p frame_id:="$FRAME_ID" \
       -p user_config_path:="$LIVOX_CONFIG" \
       -p lvx_file_path:=/tmp/mid360.lvx \
       -p cmdline_input_bd_code:=livox0000000001
@@ -69,9 +83,24 @@ case "$MODULE" in
   monitor)
     exec "$WS_DIR/monitor_position_stack.sh" "$@"
     ;;
+  local_position_monitor)
+    exec bash -c '
+      while true; do
+        clear
+        echo "MAVROS local_position monitor - $(date \"+%F %T\")"
+        echo
+        timeout 4 ros2 topic echo --once /mavros/local_position/odom || true
+        echo
+        timeout 5 ros2 topic hz /mavros/local_position/odom || true
+        echo
+        echo "Next refresh in 5s. Press Ctrl-C to stop this monitor."
+        sleep 5
+      done
+    '
+    ;;
   *)
     echo "Unknown module: $MODULE" >&2
-    echo "Expected one of: mavros, livox, fast_lio, lio_to_mavros, monitor" >&2
+    echo "Expected one of: mavros, livox, fast_lio, lio_to_mavros, monitor, local_position_monitor" >&2
     exit 2
     ;;
 esac

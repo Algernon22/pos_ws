@@ -9,6 +9,7 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
+    start_mavros = LaunchConfiguration("start_mavros")
     fcu_url = LaunchConfiguration("fcu_url")
     tgt_system = LaunchConfiguration("tgt_system")
     mavros_namespace = LaunchConfiguration("mavros_namespace")
@@ -36,6 +37,7 @@ def generate_launch_description():
 
     mavros_node = IncludeLaunchDescription(
         AnyLaunchDescriptionSource(mavros_launch),
+        condition=IfCondition(start_mavros),
         launch_arguments={
             "fcu_url": fcu_url,
             "tgt_system": tgt_system,
@@ -95,7 +97,8 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
-            DeclareLaunchArgument("fcu_url", default_value="/dev/ttyACM0:57600"),
+            DeclareLaunchArgument("start_mavros", default_value="true"),
+            DeclareLaunchArgument("fcu_url", default_value="/dev/ttyACM0"),
             DeclareLaunchArgument("tgt_system", default_value="1"),
             DeclareLaunchArgument("mavros_namespace", default_value="mavros"),
             DeclareLaunchArgument("livox_publish_freq", default_value="10.0"),

@@ -21,15 +21,12 @@
 ./start_position_stack.sh
 ```
 
-<<<<<<< HEAD
-=======
 ### 监视程序状态
 
 ```bash
 ./monitor_position_stack.sh
 ```
 
->>>>>>> ca445f1 (monitor_position_stack.sh)
 ## 调试模式
 
 当定位启动失败、结果异常或需要分模块排查问题时，可使用调试脚本启动各模块：

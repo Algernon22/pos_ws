@@ -5,8 +5,6 @@ set -euo pipefail
 WS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 POS_SETUP="$WS_DIR/install/setup.bash"
 LIVOX_SETUP="$HOME/ws_livox/install/setup.bash"
-<<<<<<< HEAD
-=======
 MAVROS_START_DELAY="${MAVROS_START_DELAY:-3}"
 MAVROS_PID=""
 
@@ -22,7 +20,6 @@ cleanup() {
 
   exit "$exit_code"
 }
->>>>>>> ca445f1 (monitor_position_stack.sh)
 
 if [[ ! -f "$LIVOX_SETUP" ]]; then
   echo "Missing livox workspace setup: $LIVOX_SETUP" >&2

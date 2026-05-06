@@ -101,7 +101,7 @@ def generate_launch_description():
             DeclareLaunchArgument("fcu_url", default_value="/dev/ttyACM0"),
             DeclareLaunchArgument("tgt_system", default_value="1"),
             DeclareLaunchArgument("mavros_namespace", default_value="mavros"),
-            DeclareLaunchArgument("livox_publish_freq", default_value="10.0"),
+            DeclareLaunchArgument("livox_publish_freq", default_value="20.0"),
             DeclareLaunchArgument("lidar_frame_id", default_value="livox_frame"),
             DeclareLaunchArgument("fastlio_config_file", default_value="mid360.yaml"),
             DeclareLaunchArgument("use_fastlio_rviz", default_value="false"),

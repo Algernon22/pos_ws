@@ -545,12 +545,13 @@ void publish_frame_world(rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::Share
 
 void publish_frame_body(rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubLaserCloudFull_body)
 {
-    int size = feats_undistort->points.size();
+    PointCloudXYZI::Ptr laserCloudFullRes(dense_pub_en ? feats_undistort : feats_down_body);
+    int size = laserCloudFullRes->points.size();
     PointCloudXYZI::Ptr laserCloudIMUBody(new PointCloudXYZI(size, 1));
 
     for (int i = 0; i < size; i++)
     {
-        RGBpointBodyLidarToIMU(&feats_undistort->points[i], \
+        RGBpointBodyLidarToIMU(&laserCloudFullRes->points[i], \
                             &laserCloudIMUBody->points[i]);
     }
 
@@ -625,12 +626,26 @@ void set_posestamp(T & out)
     
 }
 
+void set_twiststamp(nav_msgs::msg::Odometry &out)
+{
+    // Publish body-frame linear velocity and body yaw rate so downstream
+    // consumers can reconstruct planner state without re-estimating motion.
+    const V3D vel_body = state_point.rot.conjugate() * state_point.vel;
+    out.twist.twist.linear.x = vel_body(0);
+    out.twist.twist.linear.y = vel_body(1);
+    out.twist.twist.linear.z = vel_body(2);
+    out.twist.twist.angular.x = 0.0;
+    out.twist.twist.angular.y = 0.0;
+    out.twist.twist.angular.z = p_imu->get_angvel_last()(2);
+}
+
 void publish_odometry(const rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pubOdomAftMapped, std::unique_ptr<tf2_ros::TransformBroadcaster> & tf_br)
 {
     odomAftMapped.header.frame_id = "camera_init";
     odomAftMapped.child_frame_id = "body";
     odomAftMapped.header.stamp = get_ros_time(lidar_end_time);
     set_posestamp(odomAftMapped.pose);
+    set_twiststamp(odomAftMapped);
     pubOdomAftMapped->publish(odomAftMapped);
     auto P = kf.get_P();
     for (int i = 0; i < 6; i ++)

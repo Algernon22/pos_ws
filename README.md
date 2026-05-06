@@ -6,7 +6,7 @@
 
 在运行本项目之前，请确保以下环境和依赖已经正确安装并配置完成：
 
-- Livox SDK2
+- `Livox SDK2`
 - `livox_ros_driver2`
 
 ## 构建项目

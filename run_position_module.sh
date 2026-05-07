@@ -87,7 +87,7 @@ case "$MODULE" in
     exec bash -c '
       while true; do
         clear
-        echo "MAVROS local_position monitor - $(date \"+%F %T\")"
+        echo "MAVROS local_position monitor - $(date +%F\ %T)"
         echo
         timeout 4 ros2 topic echo --once /mavros/local_position/odom || true
         echo

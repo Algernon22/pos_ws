@@ -33,15 +33,20 @@ public:
 private:
     void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
     {
+        const auto output_stamp = this->get_clock()->now();
+
         // 发布vision pose
         auto vision_pose = geometry_msgs::msg::PoseStamped();
         vision_pose.header = msg->header;
+        vision_pose.header.stamp = output_stamp;
         vision_pose.pose = msg->pose.pose;
         vision_pub_->publish(vision_pose);
         
         // 如果需要，发布原始odometry
         if (odom_pub_) {
-            odom_pub_->publish(*msg);
+            auto odom_msg = *msg;
+            odom_msg.header.stamp = output_stamp;
+            odom_pub_->publish(odom_msg);
         }
     }
     

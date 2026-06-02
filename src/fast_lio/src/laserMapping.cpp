@@ -108,6 +108,8 @@ vector<double>       extrinR(9, 0.0);
 deque<double>                     time_buffer;
 deque<PointCloudXYZI::Ptr>        lidar_buffer;
 deque<sensor_msgs::msg::Imu::ConstSharedPtr> imu_buffer;
+const rclcpp::Logger realtime_logger = rclcpp::get_logger("laser_mapping");
+rclcpp::Clock::SharedPtr realtime_log_clock;
 
 PointCloudXYZI::Ptr featsFromMap(new PointCloudXYZI());
 PointCloudXYZI::Ptr feats_undistort(new PointCloudXYZI());
@@ -292,6 +294,7 @@ void standard_pcl_cbk(const sensor_msgs::msg::PointCloud2::UniquePtr msg)
         std::cerr << "lidar loop back, clear buffer" << std::endl;
         lidar_buffer.clear();
         time_buffer.clear();
+        lidar_pushed = false;
     }
     if (is_first_lidar)
     {
@@ -321,6 +324,7 @@ void livox_pcl_cbk(const fast_lio::msg::CustomMsg::UniquePtr msg)
         std::cerr << "lidar loop back, clear buffer" << std::endl;
         lidar_buffer.clear();
         time_buffer.clear();
+        lidar_pushed = false;
     }
     if(is_first_lidar)
     {
@@ -385,6 +389,7 @@ double lidar_mean_scantime = 0.0;
 int    scan_num = 0;
 void trim_lidar_buffer_for_realtime()
 {
+    int dropped = 0;
     while (
         lidar_buffer.size() > 1 &&
         (
@@ -395,6 +400,30 @@ void trim_lidar_buffer_for_realtime()
         lidar_buffer.pop_front();
         time_buffer.pop_front();
         lidar_pushed = false;
+        dropped++;
+    }
+
+    if (dropped > 0) {
+        const double lag = time_buffer.empty() ? 0.0 : last_timestamp_lidar - time_buffer.front();
+        if (realtime_log_clock) {
+            RCLCPP_WARN_THROTTLE(
+                realtime_logger,
+                *realtime_log_clock,
+                1000,
+                "Dropped %d stale lidar frames, buffer=%zu, lag=%.3fs",
+                dropped,
+                lidar_buffer.size(),
+                lag
+            );
+        } else {
+            RCLCPP_WARN(
+                realtime_logger,
+                "Dropped %d stale lidar frames, buffer=%zu, lag=%.3fs",
+                dropped,
+                lidar_buffer.size(),
+                lag
+            );
+        }
     }
 }
 
@@ -914,6 +943,7 @@ public:
         this->get_parameter_or<vector<double>>("mapping.extrinsic_R", extrinR, vector<double>());
 
         RCLCPP_INFO(this->get_logger(), "p_pre->lidar_type %d", p_pre->lidar_type);
+        realtime_log_clock = this->get_clock();
 
         path.header.stamp = this->get_clock()->now();
         path.header.frame_id ="camera_init";

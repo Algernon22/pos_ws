@@ -92,8 +92,9 @@ double last_timestamp_lidar = 0, last_timestamp_imu = -1.0;
 double gyr_cov = 0.1, acc_cov = 0.1, b_gyr_cov = 0.0001, b_acc_cov = 0.0001;
 double filter_size_corner_min = 0, filter_size_surf_min = 0, filter_size_map_min = 0, fov_deg = 0;
 double cube_len = 0, HALF_FOV_COS = 0, FOV_DEG = 0, total_distance = 0, lidar_end_time = 0, first_lidar_time = 0.0;
+double max_lidar_buffer_time = 0.25;
 int    effct_feat_num = 0, time_log_counter = 0, scan_count = 0, publish_count = 0;
-int    iterCount = 0, feats_down_size = 0, NUM_MAX_ITERATIONS = 0, laserCloudValidNum = 0, pcd_save_interval = -1, pcd_index = 0;
+int    iterCount = 0, feats_down_size = 0, NUM_MAX_ITERATIONS = 0, laserCloudValidNum = 0, pcd_save_interval = -1, pcd_index = 0, max_lidar_buffer_size = 5;
 bool   point_selected_surf[100000] = {0};
 bool   lidar_pushed, flg_first_scan = true, flg_exit = false, flg_EKF_inited;
 bool   scan_pub_en = false, dense_pub_en = false, scan_body_pub_en = false;
@@ -290,6 +291,7 @@ void standard_pcl_cbk(const sensor_msgs::msg::PointCloud2::UniquePtr msg)
     {
         std::cerr << "lidar loop back, clear buffer" << std::endl;
         lidar_buffer.clear();
+        time_buffer.clear();
     }
     if (is_first_lidar)
     {
@@ -318,6 +320,7 @@ void livox_pcl_cbk(const fast_lio::msg::CustomMsg::UniquePtr msg)
     {
         std::cerr << "lidar loop back, clear buffer" << std::endl;
         lidar_buffer.clear();
+        time_buffer.clear();
     }
     if(is_first_lidar)
     {
@@ -380,8 +383,29 @@ void imu_cbk(const sensor_msgs::msg::Imu::UniquePtr msg_in)
 
 double lidar_mean_scantime = 0.0;
 int    scan_num = 0;
+void trim_lidar_buffer_for_realtime()
+{
+    while (
+        lidar_buffer.size() > 1 &&
+        (
+            static_cast<int>(lidar_buffer.size()) > max_lidar_buffer_size ||
+            last_timestamp_lidar - time_buffer.front() > max_lidar_buffer_time
+        )
+    ) {
+        lidar_buffer.pop_front();
+        time_buffer.pop_front();
+        lidar_pushed = false;
+    }
+}
+
 bool sync_packages(MeasureGroup &meas)
 {
+    if (lidar_buffer.empty() || imu_buffer.empty()) {
+        return false;
+    }
+
+    trim_lidar_buffer_for_realtime();
+
     if (lidar_buffer.empty() || imu_buffer.empty()) {
         return false;
     }
@@ -846,6 +870,8 @@ public:
         this->declare_parameter<bool>("mapping.extrinsic_est_en", true);
         this->declare_parameter<bool>("pcd_save.pcd_save_en", false);
         this->declare_parameter<int>("pcd_save.interval", -1);
+        this->declare_parameter<int>("realtime.max_lidar_buffer_size", 5);
+        this->declare_parameter<double>("realtime.max_lidar_buffer_time", 0.25);
         this->declare_parameter<vector<double>>("mapping.extrinsic_T", vector<double>());
         this->declare_parameter<vector<double>>("mapping.extrinsic_R", vector<double>());
 
@@ -882,6 +908,8 @@ public:
         this->get_parameter_or<bool>("mapping.extrinsic_est_en", extrinsic_est_en, true);
         this->get_parameter_or<bool>("pcd_save.pcd_save_en", pcd_save_en, false);
         this->get_parameter_or<int>("pcd_save.interval", pcd_save_interval, -1);
+        this->get_parameter_or<int>("realtime.max_lidar_buffer_size", max_lidar_buffer_size, 5);
+        this->get_parameter_or<double>("realtime.max_lidar_buffer_time", max_lidar_buffer_time, 0.25);
         this->get_parameter_or<vector<double>>("mapping.extrinsic_T", extrinT, vector<double>());
         this->get_parameter_or<vector<double>>("mapping.extrinsic_R", extrinR, vector<double>());
 
